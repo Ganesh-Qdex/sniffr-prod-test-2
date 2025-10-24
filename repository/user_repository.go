@@ -57,6 +57,20 @@ func (r *UserRepository) GetByID(ctx context.Context, id string) (*models.User, 
 	return &user, nil
 }
 
+// GetByEmail retrieves a user by email
+func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.User, error) {
+	var user models.User
+	err := r.collection.FindOne(ctx, bson.M{"email": email}).Decode(&user)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, fmt.Errorf("user not found")
+		}
+		return nil, fmt.Errorf("failed to get user: %v", err)
+	}
+
+	return &user, nil
+}
+
 // GetAll retrieves all users
 func (r *UserRepository) GetAll(ctx context.Context) ([]*models.User, error) {
 	cursor, err := r.collection.Find(ctx, bson.M{})

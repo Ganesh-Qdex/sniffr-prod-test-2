@@ -7,6 +7,7 @@ import (
 
 	"user-crud/models"
 	"user-crud/repository"
+	"user-crud/utils"
 
 	"github.com/gorilla/mux"
 )
@@ -30,13 +31,21 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Hash the password
+	hashedPassword, err := utils.HashPassword(req.Password)
+	if err != nil {
+		http.Error(w, "Failed to hash password", http.StatusInternalServerError)
+		return
+	}
+
 	// Convert request to user model
 	user := &models.User{
-		Name:    req.Name,
-		Email:   req.Email,
-		Age:     req.Age,
-		Phone:   req.Phone,
-		Address: req.Address,
+		Name:     req.Name,
+		Email:    req.Email,
+		Password: hashedPassword,
+		Age:      req.Age,
+		Phone:    req.Phone,
+		Address:  req.Address,
 	}
 
 	createdUser, err := h.userRepo.Create(r.Context(), user)
@@ -44,6 +53,9 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	// Remove password from response
+	createdUser.Password = ""
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -65,6 +77,9 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Remove password from response
+	user.Password = ""
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(user)
 }
@@ -75,6 +90,11 @@ func (h *UserHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	// Remove passwords from response
+	for _, user := range users {
+		user.Password = ""
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -101,6 +121,9 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	// Remove password from response
+	updatedUser.Password = ""
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(updatedUser)
