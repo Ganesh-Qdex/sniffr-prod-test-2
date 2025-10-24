@@ -2,6 +2,7 @@ package routes
 
 import (
 	"user-crud/handlers"
+	"user-crud/monitoring"
 
 	"github.com/gorilla/mux"
 )
@@ -10,6 +11,9 @@ import (
 func SetupRoutes() *mux.Router {
 	router := mux.NewRouter()
 	userHandler := handlers.NewUserHandler()
+
+	// Create metrics collector
+	metricsCollector := monitoring.NewMetricsCollector()
 
 	// API routes
 	api := router.PathPrefix("/api/v1").Subrouter()
@@ -21,8 +25,8 @@ func SetupRoutes() *mux.Router {
 	api.HandleFunc("/users/{id}", userHandler.UpdateUser).Methods("PUT")
 	api.HandleFunc("/users/{id}", userHandler.DeleteUser).Methods("DELETE")
 
-	// Health check route
-	router.HandleFunc("/health", userHandler.HealthCheck).Methods("GET")
+	// Monitoring routes
+	monitoring.SetupMonitoringRoutes(router, metricsCollector)
 
 	return router
 }

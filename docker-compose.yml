@@ -16,6 +16,19 @@ services:
     networks:
       - user-crud-network
 
+  # Redis service
+  redis:
+    image: redis:7-alpine
+    container_name: user-crud-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - user-crud-network
+
   # User CRUD API service
   user-crud-api:
     build: .
@@ -26,14 +39,19 @@ services:
     environment:
       MONGO_URI: mongodb://admin:password@mongodb:27017
       DB_NAME: userdb
+      REDIS_ADDR: redis:6379
+      REDIS_PASSWORD: ""
+      REDIS_DB: "0"
       PORT: 8080
     depends_on:
       - mongodb
+      - redis
     networks:
       - user-crud-network
 
 volumes:
   mongodb_data:
+  redis_data:
 
 networks:
   user-crud-network:
